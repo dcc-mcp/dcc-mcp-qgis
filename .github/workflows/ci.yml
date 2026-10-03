@@ -1,0 +1,60 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  portable:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.10', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m ruff check src tests scripts
+      - run: python -m ruff format --check src tests scripts
+      - run: python -m pytest -m 'not live'
+      - run: python -m build
+      - run: |
+          python -m venv .wheel-venv
+          .wheel-venv/bin/python -m pip install dist/*.whl pytest PyYAML jsonschema
+          .wheel-venv/bin/python -m pytest -m 'not live'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qgis-wheel-${{ matrix.python }}
+          path: dist/
+  qgis-native:
+    # A labelled, operator-provisioned runner is required. Do not apt-install a
+    # distro-dependent QGIS version and silently call it qualified native CI.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, Linux, qgis-3-40]
+    env:
+      QT_QPA_PLATFORM: offscreen
+      DCC_MCP_QGIS_REQUIRE_NATIVE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - run: /usr/bin/python3 -m venv --system-site-packages .venv
+      - run: .venv/bin/python -m pip install -e '.[dev]'
+      - run: .venv/bin/python -m pytest
+      - run: .venv/bin/python scripts/live_smoke.py --output artifacts/ci-source
+      - run: .venv/bin/python -m build
+      - run: |
+          /usr/bin/python3 -m venv --system-site-packages .wheel-venv
+          .wheel-venv/bin/python -m pip install dist/*.whl pytest PyYAML jsonschema mcp==2.2.0
+          .wheel-venv/bin/python -c "import dcc_mcp_qgis; assert '/src/' not in dcc_mcp_qgis.__file__"
+          .wheel-venv/bin/python -m pytest
+          .wheel-venv/bin/python scripts/live_smoke.py --output artifacts/ci-wheel
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qgis-native-evidence
+          path: |
+            artifacts/
+            dist/
