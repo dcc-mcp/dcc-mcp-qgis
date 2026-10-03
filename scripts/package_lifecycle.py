@@ -28,6 +28,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--python", default=sys.executable)
     parser.add_argument("--baseline-wheel", type=Path, required=True)
+    parser.add_argument(
+        "--baseline-requirements",
+        type=Path,
+        help="Requirements matching the baseline wheel; defaults to the current validation requirements",
+    )
     parser.add_argument("--final-wheel", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -37,6 +42,8 @@ def main():
     clean = output / "clean"
     clean.mkdir()
     baseline, final = args.baseline_wheel.resolve(strict=True), args.final_wheel.resolve(strict=True)
+    requirements = root / "docs/requirements-validation.txt"
+    baseline_requirements = (args.baseline_requirements or requirements).resolve(strict=True)
     uv = shutil.which("uv")
     if uv is None:
         raise RuntimeError("Use an already-installed official uv; this script does not install tooling")
@@ -58,11 +65,14 @@ def main():
     run("create-environment", [uv, "venv", "--python", args.python, "--system-site-packages", output / "venv"])
     run(
         "baseline-install",
-        [uv, "pip", "install", "--python", python, baseline, "-r", root / "docs/requirements-validation.txt"],
+        [uv, "pip", "install", "--python", python, baseline, "-r", baseline_requirements],
     )
     first = json.loads(run("baseline-origin", [python, "-c", SNAPSHOT]))
     assert str(output / "venv") in first["origin"]
-    run("upgrade", [uv, "pip", "install", "--python", python, "--reinstall-package", "dcc-mcp-qgis", final])
+    run(
+        "upgrade",
+        [uv, "pip", "install", "--python", python, "--reinstall-package", "dcc-mcp-qgis", final, "-r", requirements],
+    )
     upgraded = json.loads(run("upgrade-origin", [python, "-c", SNAPSHOT]))
     expected = {
         str(path.relative_to(root / "src/dcc_mcp_qgis")): hashlib.sha256(path.read_bytes()).hexdigest()

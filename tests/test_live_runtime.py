@@ -100,6 +100,27 @@ def test_tamper_is_detected(session):
         validate_bundle(session.workspace, "styled/project.qgz")
 
 
+def test_save_reopen_accepts_native_precision_expansion(session, polygon):
+    coordinates = []
+    for edge in range(4):
+        for i in range(150):
+            x, y = [(0.1 + i / 10, 0.2), (15.1, 0.2 + i / 10), (15.1 - i / 10, 15.2), (0.1, 15.2 - i / 10)][edge]
+            coordinates.append(f"{x:.1f} {y:.1f}")
+    coordinates.append(coordinates[0])
+    wkt = "POLYGON ((" + ",".join(coordinates) + "))"
+    assert len(wkt) < 10000
+    session.add_features(polygon, [{"wkt": wkt, "attributes": {"name": "Precision", "value": 1}}])
+    before = next(session._layer(polygon).getFeatures()).geometry()
+    assert len(before.asWkt(17)) > 10000
+    expected = bytes(before.asWkb())
+    session.save_project("precision-expanded")
+    reopened = session.reopen_project("precision-expanded/project.qgz")["context"]["layers"][0]
+    actual = next(session._layer(reopened["layer_id"]).getFeatures())
+    assert bytes(actual.geometry().asWkb()) == expected
+    session.update_feature(reopened["layer_id"], actual.id(), attributes={"value": 2})
+    assert session.query_features(reopened["layer_id"])["context"]["features"][0]["attributes"]["value"] == 2
+
+
 def test_no_arbitrary_project(session):
     path = session.workspace / "fake.qgz"
     path.write_bytes(b"not a project")

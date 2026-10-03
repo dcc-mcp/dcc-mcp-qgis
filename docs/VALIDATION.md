@@ -1,8 +1,9 @@
 # Validation evidence
 
 **Historical Core/server 0.20.39 evidence.** This record is preserved without
-relabeling its native measurements. The 0.20.41 candidate requires native
-revalidation; current portable checks are tracked in the
+relabeling its native measurements. Its dependency snapshot is preserved in
+`requirements-validation-0.20.39.txt`. Exact-commit 0.20.41 acceptance and the
+geometry correction's remaining native revalidation are tracked in the
 [runtime upgrade record](RUNTIME_UPGRADE_0_20_41.md).
 
 ## Revision 2 numerical and label presentation regressions
@@ -39,7 +40,7 @@ installed wheel. This is not a published release or a remote CI result.
 - Ruff check and format check: pass; source distribution and wheel build: pass
 - Both installable skill directories pass Core's actual `validate_skill` API
 
-`requirements-validation.txt` records the exact independent wheel-client/test
+`requirements-validation-0.20.39.txt` records the exact independent wheel-client/test
 dependencies. QGIS/Qt/system Python are native prerequisites outside this pip
 snapshot. The admitted runtime range is wider than these measured combinations;
 see [release-readiness gates](RELEASE_READINESS.md).
@@ -100,6 +101,8 @@ independent installed wheel.
 ## Reproduce
 
 Use the QGIS-compatible interpreter and dedicated environment from INSTALL.md.
+The commands below use the current 0.20.41 requirements. Replaying a historical
+0.20.39 wheel requires `docs/requirements-validation-0.20.39.txt` instead.
 The native gate must not silently skip when QGIS is absent:
 
 ```sh
@@ -143,6 +146,9 @@ installed source/skill file hash to the final source. A corrupt-wheel replacemen
 must fail while preserving all previous installed files. It then uninstalls the
 package, proves import is unavailable from a clean directory, reinstalls the final
 wheel and reruns the full native suite plus official-SDK MCP acceptance.
+When the baseline wheel requires Core/server 0.20.39, supply
+`--baseline-requirements docs/requirements-validation-0.20.39.txt`. The upgrade
+stage resolves the final wheel with the current 0.20.41 requirements.
 
 Evidence: `artifacts/package-lifecycle-final/result.json` and per-stage logs.
 This verifies standard package-manager lifecycle and failed artifact preparation;

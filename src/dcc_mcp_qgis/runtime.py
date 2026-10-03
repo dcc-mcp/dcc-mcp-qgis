@@ -298,7 +298,11 @@ class QgisSession:
 
         if not isinstance(wkt, str) or not 1 <= len(wkt) <= 10000:
             raise QgisError("invalid_geometry", "WKT must be 1 to 10000 characters")
-        geometry = QgsGeometry.fromWkt(wkt)
+        return QgisSession._check_geometry(layer, QgsGeometry.fromWkt(wkt))
+
+    @staticmethod
+    def _check_geometry(layer, geometry):
+        """Validate native readback without imposing the client WKT text limit."""
         if (
             geometry.isNull()
             or geometry.isEmpty()
@@ -683,7 +687,7 @@ class QgisSession:
             raise QgisError("unsupported_project", "Reopened layer is outside supported geometry, CRS or field limits")
         for feature in layer.getFeatures():
             check_dcc_cancelled()
-            self._geometry(layer, feature.geometry().asWkt(17))
+            self._check_geometry(layer, feature.geometry())
             attrs = self._feature(feature)["attributes"]
             attrs.pop("fid", None)
             self._attributes(layer, attrs)

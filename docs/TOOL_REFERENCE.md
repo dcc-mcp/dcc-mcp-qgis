@@ -57,7 +57,7 @@ to 128 MiB total, with at most four ZIP members and 16 MiB total uncompressed ZI
 content. These are resource bounds, not a security sandbox for hostile native
 parsers or concurrent filesystem attackers.
 
-### Typed label presentation
+## Typed label presentation
 
 `style_layer` accepts `label_buffer_size` from 0 to 2 millimeters (default 0.7;
 0 disables the halo), `label_buffer_color` as six-digit RGB hex, `font_family`

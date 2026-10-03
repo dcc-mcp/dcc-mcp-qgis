@@ -12,13 +12,18 @@ caller, not added as an adapter dependency. This revision remains a candidate.
 The preserved baseline is commit
 `08e8ea23efe09bacdc0adacaa87e2e2471d717ec`, using Core/server 0.20.39.
 The historical native profile is Linux QGIS 3.40.6-Bratislava, Qt 5.15.15,
-Python 3.13.5 and official MCP SDK 2.2.0. VALIDATION.md and its exact
-requirements snapshot describe that earlier profile. They do not qualify
+Python 3.13.5 and official MCP SDK 2.2.0. VALIDATION.md and
+`requirements-validation-0.20.39.txt` describe that earlier profile. They do not qualify
 the current source or any 0.20.41 deployment.
 
 The current runtime gate admits only Linux, QGIS 3.40.x, Qt5,
-Python 3.10–3.13 and Core/server exactly 0.20.41. Its native behavior has not
-been measured. Windows portable source/package checks use Python 3.12.10 and
+Python 3.10–3.13 and Core/server exactly 0.20.41. Separate Linux native acceptance
+passed on exact commit `8b3afd197a24eaaa17a87ad02558855976247fa9`: 113 source tests
+and the same 113 tests after a fresh wheel install, actual SDK loops, editable
+QGZ save/reopen, PNG byte equality, loopback binding and cleanup. This is not
+226 distinct tests and does not qualify other admitted host combinations.
+The later geometry-readback correction needs fresh native acceptance on its
+own final source and wheel. Windows portable source/package checks use Python 3.12.10 and
 MCP SDK 2.2.0 in a fresh isolated environment; this does not admit Windows QGIS
 or qualify another SDK/native combination. Exact executed checks and resolved
 package versions belong to the separate upgrade receipts, not historical logs.
@@ -44,7 +49,13 @@ was observed in these portable checks. Missing PyQGIS prevents native acceptance
 The separate receipt is `checks/qgis/first/checks.json` in the upgrade artifacts;
 this result covers source tests and build, not a real QGIS process or remote CI.
 
-## Native revalidation required
+## Native acceptance and revalidation
+
+The exact-commit Linux results above are separate from remote CI. Required
+portable CI workflows passed on that same commit; its native CI job was skipped.
+The geometry regression now retains client WKT length checks while validating
+reopened native objects directly. Its high-precision polygon save/reopen test
+must execute in QGIS before the corrected revision is native-qualified.
 
 Run source and independent installed-wheel suites with the intended QGIS
 interpreter, then run `scripts/live_smoke.py` against a new owned process and
@@ -67,6 +78,11 @@ the 0.20.41 candidate wheel into a different dedicated environment using the
 same native-compatible QGIS interpreter, then check resolved Core/server
 versions before running the native acceptance above. Do not reuse an existing
 QGIS GUI session or workspace containing user scenes.
+
+`docs/requirements-validation.txt` pins the current 0.20.41 runtime. To rehearse
+a 0.20.39 baseline with `scripts/package_lifecycle.py`, pass
+`--baseline-requirements docs/requirements-validation-0.20.39.txt`; the upgrade
+stage uses the current validation requirements with the final 0.20.41 wheel.
 
 For rollback, stop the owned candidate process and relaunch the preserved
 0.20.39 environment with a new endpoint filename and a new evidence directory.

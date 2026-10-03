@@ -4,10 +4,14 @@ This is a hardened pre-release source candidate. Do not equate one Linux smoke
 with production readiness, remote CI success, a public release or protocol
 certification.
 
-This revision upgrades the candidate to Core/server 0.20.41. Native evidence
-below was collected with 0.20.39 and must be rerun for this candidate; see the
-[runtime upgrade record](RUNTIME_UPGRADE_0_20_41.md). Prior local artifacts and
-gate descriptions do not establish acceptance of the upgraded runtime.
+Separate Linux acceptance with Core/server 0.20.41 passed against exact commit
+`8b3afd197a24eaaa17a87ad02558855976247fa9`: 113 source tests and the same 113 tests
+from a fresh installed wheel, actual SDK loops, editable QGZ save/reopen,
+byte-identical PNGs, loopback binding and cleanup. These are two executions of
+the same suite, not 226 distinct tests. The geometry-readback correction after
+that commit requires new source and installed-wheel native acceptance; prior
+results do not qualify changed code. See the
+[runtime upgrade record](RUNTIME_UPGRADE_0_20_41.md).
 
 ## Runtime qualification versus measured acceptance
 
@@ -17,8 +21,9 @@ gate descriptions do not establish acceptance of the upgraded runtime.
   3.13.5, Core/server 0.20.39, official MCP SDK 2.2.0, protocol 2025-06-18
 - Other admitted patch/Python combinations: not measured; native CI must prove
   each deployment's actual host before it is qualified
-- Portable matrix declared in CI: Python 3.10 and 3.13; not evidence that remote
-  CI has executed or that those Python versions are supplied by every QGIS build
+- Portable CI passed on Python 3.10 and 3.13 for exact commit
+  `8b3afd197a24eaaa17a87ad02558855976247fa9`; this does not establish which Python
+  versions are supplied by every QGIS build or qualify later revisions
 - Rejected/out of scope: Windows/macOS, QGIS4/Qt6, desktop attachment, external
   data providers/projects, multi-user hostile workspace isolation
 
@@ -35,7 +40,7 @@ gate descriptions do not establish acceptance of the upgraded runtime.
 | Filesystem | No traversal/symlink alias, no output replacement including concurrent empty directories | Unit/native tests; files use exclusive hardlink and bundles Linux no-replace rename |
 | Lifecycle | Shutdown closes real listener and registry state; cleanup is idempotent; restart uses a fresh process | Repeated source/wheel owned-process MCP smokes and native close/failed-endpoint tests |
 | Build/install | Final source builds; independent wheel imports and full native workflow succeeds | `artifacts/dist`, `.wheel-venv` import origin and `artifacts/wheel-live-final` |
-| CI | Portable checks automatic; native runner must be explicitly provisioned and may not silently skip | Workflow authored; no remote CI result claimed. Manual native job uses `self-hosted, Linux, qgis-3-40` |
+| CI | Portable checks automatic; native runner must be explicitly provisioned and may not silently skip | Exact commit `8b3afd197a24eaaa17a87ad02558855976247fa9` passed [CI](https://github.com/dcc-mcp/dcc-mcp-qgis/actions/runs/37100867137) and [Repository contract](https://github.com/dcc-mcp/dcc-mcp-qgis/actions/runs/37100867664). The native CI job was skipped; separate Linux acceptance is not native CI. Manual native job uses `self-hosted, Linux, qgis-3-40`. Changed revisions require fresh CI |
 | Package lifecycle | Baseline install → explicit replacement → corrupt replacement preservation → uninstall/import absent → reinstall/native SDK | Standard uv rehearsal in a fresh owned environment; per-stage hashes/logs in `artifacts/package-lifecycle-final` |
 | Install SOP | Complete shared plan/execute/verify/status/uninstall and rollback | Not implemented here; shared Core lifecycle review is separate. No adapter-local substitute |
 | Release | Reviewed final revision, CI/provenance and publication approval | Not run or authorized by this source task |
